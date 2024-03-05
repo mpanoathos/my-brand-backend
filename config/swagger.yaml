@@ -1,0 +1,330 @@
+openapi: 3.0.0
+info:
+  title: My-brand Backend
+  description: My-brand Backend
+  version: 0.1.9
+servers:
+  - url: http://localhost:5000
+    description: Localhost for APIs
+paths:
+  /blogs:
+    get:
+      summary: Returns a list of blogs.
+      tags:
+        - Blogs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  type: string
+
+  /blogs/{id}:
+    get:
+      summary: Returns a specific blog by ID.
+      tags:
+        - Blogs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /blogs/post:
+    post:
+      summary: Create a new blog post.
+      tags:
+        - Blogs
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+      requestBody:
+        description: Blog post details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Post"
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+          
+
+  /blogs/post/{id}:
+    put:
+      summary: Update a specific blog post by ID.
+      tags:
+        - Blogs
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog post to update.
+      requestBody:
+        description: Updated blog post details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Post"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+    delete:
+      summary: Delete a specific blog post by ID.
+      tags:
+        - Blogs
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog post to delete.
+      responses:
+        '204':
+          description: No Content
+
+  /users:
+    get:
+      summary: Returns a list of all users.
+      tags:
+        - Users
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+  /users/login:
+    post:
+      summary: User login
+      tags:
+        - Users
+      requestBody:
+        description: User login details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  tokenType:
+                    type: string
+                  expiresIn:
+                    type: integer
+                example:
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0"
+                  tokenType: "Bearer"
+                  expiresIn: 3600  # Token expiration time in seconds
+
+  /users/register:
+    post:
+      summary: Register a new user.
+      tags:
+        - Users
+      requestBody:
+        description: User registration details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    put:
+      summary: Update a specific user by ID.
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the user to update.
+      requestBody:
+        description: Updated user details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /blogs/{id}/comments:
+    get:
+      summary: Returns comments for a specific blog post by ID.
+      tags:
+        - Comments
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog post.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+
+  /blogs/{id}/comment:
+    post:
+      summary: Add a new comment to a specific blog post by ID.
+      tags:
+        - Comments
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog post.
+      requestBody:
+        description: Comment details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Comment"
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+  /blogs/{id}/likes:
+    get:
+      summary: Get Likes for a Post
+      tags:
+        - Likes
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The ID of the post to get likes for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              example:
+                likes: 42
+        '404':
+          description: Post not found  
+  /blogs/{id}/like:
+    post:
+      summary: Like a specific blog post by ID.
+      tags:
+        - Likes
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          minimum: 1
+          description: ID of the blog post to like.
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        '404':
+          description: Post not found
+        '500':
+          description: Internal Server Error
+
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: Authorization
