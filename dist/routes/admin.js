@@ -65,24 +65,25 @@ router.post('/users/login', (req, res) => __awaiter(void 0, void 0, void 0, func
 //Register users
 router.post('/users/register', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
+        // Validate input using Joi
+        const validation = userSchema.validate({ email, password });
+        if (validation.error) {
+            return res.status(400).json({ message: validation.error.details[0].message });
+        }
+        console.log(validation.error);
         const hashedPassword = yield bcrypt.hash(password, 10);
-        try {
-            const user = yield User.create({ username, password: hashedPassword });
-            res.status(201).json({ message: 'User Created', user });
-        }
-        catch (error) {
-            if (error.code === 11000) {
-                res.status(409).json({ message: 'User already in use' });
-            }
-            else {
-                res.status(500).json({ message: 'Internal server error' });
-            }
-        }
+        const user = yield User.create({ email, password: hashedPassword });
+        res.status(201).json({ message: 'User Created', user });
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Internal server error' });
+        if (error.code === 11000) {
+            res.status(409).json({ message: 'User already in use' });
+        }
+        else {
+            res.status(500).json({ message: 'Internal server error' });
+        }
     }
 }));
 // Get all Users

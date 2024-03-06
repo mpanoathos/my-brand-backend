@@ -2,7 +2,7 @@ import Joi from 'joi';
 
 // User validations
 const userSchema = Joi.object({
-  email: Joi.string().email().lowercase().required(),
+  email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
 });
 
@@ -10,7 +10,7 @@ const userSchema = Joi.object({
 const postSchema = Joi.object({
   title: Joi.string().required(),
   body: Joi.string().required(),
-});
+}).options({ allowUnknown: true, stripUnknown: true });
 
 export {
   userSchema,

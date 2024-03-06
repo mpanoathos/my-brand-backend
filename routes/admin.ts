@@ -73,22 +73,27 @@ router.post('/users/login', async (req: Request, res: Response) => {
 //Register users
 router.post('/users/register', async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { email, password } = req.body;
 
-    try {
-      const user = await User.create({ username, password: hashedPassword });
-      res.status(201).json({ message: 'User Created', user });
-    } catch (error:any) {
-      if (error.code === 11000) {
-        res.status(409).json({ message: 'User already in use' });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+    // Validate input using Joi
+    const validation = userSchema.validate({ email, password });
+
+    if (validation.error) {
+      return res.status(400).json({ message: validation.error.details[0].message });
     }
+    console.log(validation.error)
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ email, password: hashedPassword });
+
+    res.status(201).json({ message: 'User Created', user });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+
+    if ((error as any).code === 11000) {
+      res.status(409).json({ message: 'User already in use' });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
   }
 });
 
