@@ -196,7 +196,7 @@
     "yamljs": "^0.3.0"
   },
   "scripts": {
-    "start": "tsc && node dist/app.js",
+    "start": "tsc && node ./dist/app.js",
     "test": "jest",
     "build": "tsc",
     "server": "nodemon"
