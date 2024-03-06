@@ -2,7 +2,7 @@
   "name": "my-brand-mpano-main",
   "version": "1.0.0",
   "description": "This repository has a front-end design of my potfolio",
-  "main": "app.ts",
+  "main": "app.js",
   "type": "module",
   "dependencies": {
     "@hapi/joi": "^17.1.1",
