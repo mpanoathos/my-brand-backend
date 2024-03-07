@@ -3,7 +3,7 @@ dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
 import Post, { PostDocument } from '../models/Post.js'; 
-import User from '../models/User.js'; 
+import User,{UserDocument} from '../models/User.js'; 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -33,6 +33,45 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): vo
     } catch (error) {
       console.error(error);
       res.status(401).json({ message: 'Unauthorized' });
+    }
+  }
+};
+const checkAdmin = async (
+  req: Request & { user?: UserDocument },
+  res: Response,
+  next: NextFunction
+): Promise<Response<any, Record<string, any>> | void> => {
+  try {
+    const token = req.cookies.token;
+    console.log('Received Token:', token);
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized, please Login" });
+    }
+
+    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET || "");
+    console.log('Decoded Token:', decodedToken);
+
+    if (!decodedToken || !decodedToken.userId) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const user: UserDocument | null = await User.findById(decodedToken.userId); 
+
+    if (user?.userRole === "admin") {
+      req.user = user;
+      next();
+    } else {
+      return res
+        .status(401)
+        .json({ message: "You are not allowed to perform this action" });
+    }
+  } catch (err: any) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    } else if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    } else {
+      return res.status(401).json({ message: "Unauthorized, please Login" });
     }
   }
 };
@@ -98,7 +137,7 @@ router.post('/users/register', async (req: Request, res: Response) => {
 });
 
 // Get all Users
-router.get('/users', async (req: Request, res: Response) => {
+router.get('/users',checkAdmin, async (req: Request, res: Response) => {
   try {
     const users = await User.find();
 
@@ -110,10 +149,10 @@ router.get('/users', async (req: Request, res: Response) => {
 });
 
 // Update User by ID
-router.put('/users/:userId', async (req: Request, res: Response) => {
+router.put('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
-    const { email, password, otherUpdatedFields } = req.body;
+    const { email, password, userRole } = req.body;
 
     const user = await User.findById(userId);
 
@@ -124,7 +163,7 @@ router.put('/users/:userId', async (req: Request, res: Response) => {
     // Update user fields
     user.email = email || user.email;
     user.password = password ? await bcrypt.hash(password, 10) : user.password; // Hash the new password if provided
-    // Update other fields as needed
+    user.userRole = userRole || user.userRole; 
 
     // Save the updated user
     await user.save();
@@ -135,10 +174,30 @@ router.put('/users/:userId', async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+// Delete User by ID
+router.delete('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete the user
+    await user.deleteOne();
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 // Like a post
-router.post('/blogs/:id/like', authMiddleware, async (req: Request, res: Response) => {
+router.post('/blogs/:id/like', checkAdmin, async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     const post: PostDocument | null = await Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } }, { new: true });
@@ -175,7 +234,7 @@ router.get('/blogs/:id/likes', async (req: Request, res: Response) => {
 });
 
 // Comment on a post
-router.post('/blogs/:id/comment', authMiddleware, async (req: Request, res: Response) => {
+router.post('/blogs/:id/comment', checkAdmin, async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     const { commentText } = req.body;
@@ -197,7 +256,7 @@ router.post('/blogs/:id/comment', authMiddleware, async (req: Request, res: Resp
 });
 
 // Get Comments for a Post
-router.get('/blogs/:id/comments', async (req: Request, res: Response) => {
+router.get('/blogs/:id/comments', checkAdmin, async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     
@@ -219,7 +278,7 @@ router.get('/blogs/:id/comments', async (req: Request, res: Response) => {
 
 
 //Create new Post
-router.post('/blogs/post', authMiddleware, async (req: Request, res: Response) => {
+router.post('/blogs/post', checkAdmin, async (req: Request, res: Response) => {
   try {
     try {
       const newPost = new Post({
@@ -244,7 +303,7 @@ router.post('/blogs/post', authMiddleware, async (req: Request, res: Response) =
 });
 
 // Update Post Page
-router.put('/blogs/post/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/blogs/post/:id', checkAdmin, async (req: Request, res: Response) => {
   try {
     const { title, body } = req.body;
 
@@ -270,7 +329,7 @@ router.put('/blogs/post/:id', authMiddleware, async (req: Request, res: Response
 });
 
 // DELETE
-router.delete('/blogs/post/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/blogs/post/:id', checkAdmin, async (req: Request, res: Response) => {
   try {
     const deletedPost = await Post.deleteOne({ _id: req.params.id });
     res.json(deletedPost);

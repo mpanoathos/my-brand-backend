@@ -3,6 +3,7 @@ import Joi from 'joi';
 // User validations
 const userSchema = Joi.object({
   email: Joi.string().email().required(),
+  userRole: Joi.string(),
   password: Joi.string().min(8).required(),
 });
 

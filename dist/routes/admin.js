@@ -36,6 +36,41 @@ const authMiddleware = (req, res, next) => {
         }
     }
 };
+const checkAdmin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const token = req.cookies.token;
+        console.log('Received Token:', token);
+        if (!token) {
+            return res.status(401).json({ message: "Unauthorized, please Login" });
+        }
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "");
+        console.log('Decoded Token:', decodedToken);
+        if (!decodedToken || !decodedToken.userId) {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+        const user = yield User.findById(decodedToken.userId);
+        if ((user === null || user === void 0 ? void 0 : user.userRole) === "admin") {
+            req.user = user;
+            next();
+        }
+        else {
+            return res
+                .status(401)
+                .json({ message: "You are not allowed to perform this action" });
+        }
+    }
+    catch (err) {
+        if (err.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Token expired" });
+        }
+        else if (err.name === "JsonWebTokenError") {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+        else {
+            return res.status(401).json({ message: "Unauthorized, please Login" });
+        }
+    }
+});
 // POST Admin-Check-Login Page
 router.post('/users/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -87,7 +122,7 @@ router.post('/users/register', (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 // Get all Users
-router.get('/users', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/users', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield User.find();
         res.json({ users });
@@ -98,10 +133,10 @@ router.get('/users', (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 }));
 // Update User by ID
-router.put('/users/:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.put('/users/:userId', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.params.userId;
-        const { email, password, otherUpdatedFields } = req.body;
+        const { email, password, userRole } = req.body;
         const user = yield User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -109,7 +144,7 @@ router.put('/users/:userId', (req, res) => __awaiter(void 0, void 0, void 0, fun
         // Update user fields
         user.email = email || user.email;
         user.password = password ? yield bcrypt.hash(password, 10) : user.password; // Hash the new password if provided
-        // Update other fields as needed
+        user.userRole = userRole || user.userRole;
         // Save the updated user
         yield user.save();
         res.json({ message: 'User updated successfully', user });
@@ -119,8 +154,25 @@ router.put('/users/:userId', (req, res) => __awaiter(void 0, void 0, void 0, fun
         res.status(500).json({ message: 'Internal Server Error' });
     }
 }));
+// Delete User by ID
+router.delete('/users/:userId', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.userId;
+        const user = yield User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Delete the user
+        yield user.deleteOne();
+        res.json({ message: 'User deleted successfully' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+}));
 // Like a post
-router.post('/blogs/:id/like', authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/blogs/:id/like', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const postId = req.params.id;
         const post = yield Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } }, { new: true });
@@ -155,7 +207,7 @@ router.get('/blogs/:id/likes', (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 // Comment on a post
-router.post('/blogs/:id/comment', authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/blogs/:id/comment', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const postId = req.params.id;
         const { commentText } = req.body;
@@ -173,7 +225,7 @@ router.post('/blogs/:id/comment', authMiddleware, (req, res) => __awaiter(void 0
     }
 }));
 // Get Comments for a Post
-router.get('/blogs/:id/comments', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/blogs/:id/comments', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const postId = req.params.id;
         // Retrieve the post by ID
@@ -191,7 +243,7 @@ router.get('/blogs/:id/comments', (req, res) => __awaiter(void 0, void 0, void 0
     }
 }));
 //Create new Post
-router.post('/blogs/post', authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/blogs/post', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         try {
             const newPost = new Post({
@@ -214,7 +266,7 @@ router.post('/blogs/post', authMiddleware, (req, res) => __awaiter(void 0, void 
     }
 }));
 // Update Post Page
-router.put('/blogs/post/:id', authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.put('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { title, body } = req.body;
         if (!title || !body) {
@@ -238,7 +290,7 @@ router.put('/blogs/post/:id', authMiddleware, (req, res) => __awaiter(void 0, vo
     }
 }));
 // DELETE
-router.delete('/blogs/post/:id', authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.delete('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const deletedPost = yield Post.deleteOne({ _id: req.params.id });
         res.json(deletedPost);

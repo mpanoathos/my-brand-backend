@@ -6,8 +6,8 @@ info:
 servers:
   - url: http://localhost:5000
     description: Localhost for APIs
-  - url: https://my-brand-backend-5.onrender.com/docs/
-    dscription: Deployed site of apis
+  - url: https://my-brand-backend-5.onrender.com/api/docs/
+    description: Deployed site of apis
 paths:
   /blogs:
     get:
@@ -50,7 +50,7 @@ paths:
       tags:
         - Blogs
       security:
-        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       requestBody:
         description: Blog post details
         required: true
@@ -73,7 +73,7 @@ paths:
       tags:
         - Blogs
       security:
-        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -100,7 +100,7 @@ paths:
       tags:
         - Blogs
       security:
-        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -118,7 +118,7 @@ paths:
       tags:
         - Users
       security:
-        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0]
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       responses:
         '200':
           description: OK
@@ -155,9 +155,8 @@ paths:
                   expiresIn:
                     type: integer
                 example:
-                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWUwN2Q4ODg2NmY5OGZkYWVjZTdhMjIiLCJpYXQiOjE3MDk2NDg2NTF9.CA1coNFwWCfEkxH_CaB9IHvbISDanDjDiudoF1yI_d0"
+                  accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw"
                   tokenType: "Bearer"
-                  expiresIn: 3600  # Token expiration time in seconds
 
   /users/register:
     post:
@@ -184,6 +183,8 @@ paths:
       summary: Update a specific user by ID.
       tags:
         - Users
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: userId
@@ -211,6 +212,8 @@ paths:
       summary: Returns comments for a specific blog post by ID.
       tags:
         - Comments
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -233,6 +236,8 @@ paths:
       summary: Add a new comment to a specific blog post by ID.
       tags:
         - Comments
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -259,6 +264,8 @@ paths:
       summary: Get Likes for a Post
       tags:
         - Likes
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -275,11 +282,14 @@ paths:
                 likes: 42
         '404':
           description: Post not found  
+        
   /blogs/{id}/like:
     post:
       summary: Like a specific blog post by ID.
       tags:
         - Likes
+      security:
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       parameters:
         - in: path
           name: id
@@ -288,7 +298,7 @@ paths:
           minimum: 1
           description: ID of the blog post to like.
       security:
-        - apiKey: []
+        - apiKey: [eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWU5NTRjNzc1OTg2N2M5MmQwYmExZjYiLCJpYXQiOjE3MDk3OTY4MTF9.rtDz8M9OPcyo23bVXus49JhNgtzchKG-Evy8PS2_ctw]
       responses:
         '200':
           description: OK
