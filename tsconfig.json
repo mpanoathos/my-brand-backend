@@ -2,9 +2,9 @@
   "compilerOptions": {
     "target": "ES6",
     "esModuleInterop": true,
-    "module": "NodeNext",
+    "module": "commonjs",
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": "./src",

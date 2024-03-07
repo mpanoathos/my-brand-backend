@@ -227,7 +227,7 @@ router.post('/blogs/:id/comment', checkAdmin, (req, res) => __awaiter(void 0, vo
 // Get Comments for a Post
 router.get('/blogs/:id/comments', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { postId, text } = req.params;
+        const postId = req.params.id;
         // Retrieve the post by ID
         const post = yield Post.findById(postId);
         if (!post) {

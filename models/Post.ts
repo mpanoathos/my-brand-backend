@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 interface Comment {
+  id:string;
   text: string;
 }
 

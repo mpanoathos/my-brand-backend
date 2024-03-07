@@ -2,8 +2,8 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
-import Post, { PostDocument } from '../models/Post.js'; 
-import User,{UserDocument} from '../models/User.js'; 
+import Post, { PostDocument } from '../models/Post'; 
+import User,{UserDocument} from '../models/User'; 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -12,30 +12,31 @@ import jwt from 'jsonwebtoken';
 const jwtSecret = process.env.JWT_SECRET as string;
 
 
-import { userSchema, postSchema } from '../helpers/validationScheme.js';
+import { userSchema, postSchema } from '../helpers/validationScheme';
 
 const router: Router = express.Router();
 
-interface AuthRequest extends Request {
-  userId?: string;
-}
-// Check Login
-const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  const token = req.cookies.token;
+// interface AuthRequest extends Request {
+//   userId?: string;
+// }
+// // Check Login
+// const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): void => {
+//   const token = req.cookies.token;
   
-  if (!token) {
-    res.status(401).json({ message: 'Unauthorized' });
-  } else {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
-      req.userId = decoded.userId;
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Unauthorized' });
-    }
-  }
-};
+//   if (!token) {
+//     res.status(401).json({ message: 'Unauthorized' });
+//   } else {
+//     try {
+//       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+//       req.userId = decoded.userId;
+//       next();
+//     } catch (error) {
+//       console.error(error);
+//       res.status(401).json({ message: 'Unauthorized' });
+//     }
+//   }
+// };
+
 const checkAdmin = async (
   req: Request & { user?: UserDocument },
   res: Response,
@@ -75,6 +76,7 @@ const checkAdmin = async (
     }
   }
 };
+
 // POST Admin-Check-Login Page
 router.post('/users/login', async (req: Request, res: Response) => {
   try {
@@ -174,27 +176,6 @@ router.put('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
-// Delete User by ID
-router.delete('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
-  try {
-    const userId = req.params.userId;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Delete the user
-    await user.deleteOne();
-
-    res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
 
 // Like a post
 router.post('/blogs/:id/like', checkAdmin, async (req: Request, res: Response) => {
@@ -258,7 +239,7 @@ router.post('/blogs/:id/comment', checkAdmin, async (req: Request, res: Response
 // Get Comments for a Post
 router.get('/blogs/:id/comments', checkAdmin, async (req: Request, res: Response) => {
   try {
-    const {postId,text} = req.params;
+    const {postId} = req.params;
     
     // Retrieve the post by ID
     const post = await Post.findById(postId);

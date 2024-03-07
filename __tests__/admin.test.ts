@@ -1,0 +1,379 @@
+// checkAdmin.test.ts
+import request from 'supertest';
+import app from '../app'; 
+import User from '../models/User'
+import Post from '../models/Post'
+
+describe('Admin features testing', () => {
+  it('should allow access for admin user', async () => {
+    // Assuming you have an admin user with a valid token
+    const response = await request(app)
+      .get('/users') // Update the route as needed
+      .set('Cookie', 'token=valid_admin_token');
+
+    expect(response.status).toBe(200);
+    // Add more assertions as needed
+  });
+
+  it('should deny access for non-admin user', async () => {
+    // Assuming you have a non-admin user with a valid token
+    const response = await request(app)
+      .get('/users') // Update the route as needed
+      .set('Cookie', 'token=valid_non_admin_token');
+
+    expect(response.status).toBe(401);
+    // Add more assertions as needed
+  });
+
+  it('should deny access for requests without a valid token', async () => {
+    const response = await request(app)
+      .get('/users') // Update the route as needed
+
+    expect(response.status).toBe(401);
+    // Add more assertions as needed
+  });
+
+  it('should deny access for requests with an invalid token', async () => {
+    const response = await request(app)
+      .get('/users') // Update the route as needed
+      .set('Cookie', 'token=invalid_token');
+
+    expect(response.status).toBe(401);
+    // Add more assertions as needed
+  });
+
+  it('should deny access for requests with expired token', async () => {
+    // Assuming you have an expired token
+    const response = await request(app)
+      .get('/users') // Update the route as needed
+      .set('Cookie', 'token=expired_token');
+
+    expect(response.status).toBe(401);
+    // Add more assertions as needed
+  });
+
+  it('should return 400 if invalid input', async () => {
+    const response = await request(app)
+      .post('/users/login')
+      .send({ invalidField: 'invalidValue' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 401 if user does not exist', async () => {
+    const response = await request(app)
+      .post('/users/login')
+      .send({ email: 'nonexistent@example.com', password: 'password123' });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'Invalid credentials');
+  });
+
+  it('should return 401 if password is incorrect', async () => {
+    // Assuming you have a valid user with known credentials
+    const response = await request(app)
+      .post('/users/login')
+      .send({ email: 'valid@example.com', password: 'incorrectPassword' });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'Invalid credentials');
+  });
+
+  it('should return 200 and a valid token on successful login', async () => {
+    // Assuming you have a valid user with known credentials
+    const response = await request(app)
+      .post('/users/login')
+      .send({ email: 'valid@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('message', 'Valid Credentials');
+    expect(response.headers['set-cookie']).toBeDefined();
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .post('/users/login')
+      .send({ email: 'valid@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal Server Error');
+  });
+  it('should return 400 if invalid input', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ invalidField: 'invalidValue' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 400 if email or password is missing', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'valid@example.com' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 400 if email or password is invalid', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'invalid-email', password: 'short' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 409 if user already exists', async () => {
+    // Assuming you have a user with a known email
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'existing@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toHaveProperty('message', 'User already in use');
+  });
+
+  it('should return 201 and create a new user on successful registration', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'newuser@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('message', 'User Created');
+    expect(response.body).toHaveProperty('user');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(User, 'create').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'newuser@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal server error');
+  });
+
+  it('should return 400 if invalid input', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ invalidField: 'invalidValue' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 400 if email or password is missing', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'valid@example.com' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 400 if email or password is invalid', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'invalid-email', password: 'short' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 409 if user already exists', async () => {
+    // Assuming you have a user with a known email
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'existing@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toHaveProperty('message', 'User already in use');
+  });
+
+  it('should return 201 and create a new user on successful registration', async () => {
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'newuser@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty('message', 'User Created');
+    expect(response.body).toHaveProperty('user');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(User, 'create').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .post('/users/register')
+      .send({ email: 'newuser@example.com', password: 'validPassword' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal server error');
+  });
+
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .put('/users/someUserId')
+      .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
+  });
+
+  it('should return 400 if invalid input', async () => {
+    const response = await request(app)
+      .put('/users/someUserId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ invalidField: 'invalidValue' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('should return 404 if user not found', async () => {
+    const response = await request(app)
+      .put('/users/nonexistentUserId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('message', 'User not found');
+  });
+
+  it('should return 200 and update user on successful update', async () => {
+    // Assuming you have a valid user with known userId
+    const response = await request(app)
+      .put('/users/someUserId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('message', 'User updated successfully');
+    expect(response.body).toHaveProperty('user');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(User, 'findById').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .put('/users/someUserId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal Server Error');
+  });
+
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .post('/blogs/somePostId/like')
+      .send();
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
+  });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .post('/blogs/nonexistentPostId/like')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(404);
+    expect(response.text).toBe('Post not found');
+  });
+
+  it('should return 200 and updated post data on successful like', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .post('/blogs/somePostId/like')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body.data).toHaveProperty('likes');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .post('/blogs/somePostId/like')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(500);
+    expect(response.text).toBe('Internal Server Error');
+  });
+
+  
+describe('Get Likes for a Post Endpoint', () => {
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .get('/blogs/somePostId/likes')
+      .send();
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
+  });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .get('/blogs/nonexistentPostId/likes')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('message', 'Post not found');
+  });
+
+  it('should return 200 and likes count for a valid post', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .get('/blogs/somePostId/likes')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('likes');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .get('/blogs/somePostId/likes')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal Server Error');
+  });
+});
+
+  });
