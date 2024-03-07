@@ -213,7 +213,7 @@ router.post('/blogs/:id/like', checkAdmin, async (req: Request, res: Response) =
   }
 });
 // Get Likes for a Post
-router.get('/blogs/:id/likes', async (req: Request, res: Response) => {
+router.get('/blogs/:id/likes',checkAdmin, async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     
@@ -258,7 +258,7 @@ router.post('/blogs/:id/comment', checkAdmin, async (req: Request, res: Response
 // Get Comments for a Post
 router.get('/blogs/:id/comments', checkAdmin, async (req: Request, res: Response) => {
   try {
-    const postId = req.params.id;
+    const {postId,text} = req.params;
     
     // Retrieve the post by ID
     const post = await Post.findById(postId);

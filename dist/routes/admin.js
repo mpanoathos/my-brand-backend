@@ -189,7 +189,7 @@ router.post('/blogs/:id/like', checkAdmin, (req, res) => __awaiter(void 0, void 
     }
 }));
 // Get Likes for a Post
-router.get('/blogs/:id/likes', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/blogs/:id/likes', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const postId = req.params.id;
         // Retrieve the post by ID
@@ -227,7 +227,7 @@ router.post('/blogs/:id/comment', checkAdmin, (req, res) => __awaiter(void 0, vo
 // Get Comments for a Post
 router.get('/blogs/:id/comments', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const postId = req.params.id;
+        const { postId, text } = req.params;
         // Retrieve the post by ID
         const post = yield Post.findById(postId);
         if (!post) {

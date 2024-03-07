@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(cookieParser());
 app.use(methodOverride('_method'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(
   session({
