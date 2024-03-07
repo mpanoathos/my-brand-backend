@@ -6,7 +6,7 @@ info:
 servers:
   - url: http://localhost:5000
     description: Localhost for APIs
-  - url: https://my-brand-backend-5.onrender.com
+  - url: https://backend-b231.onrender.com
     description: Deployed site of apis
 paths:
   /blogs:
