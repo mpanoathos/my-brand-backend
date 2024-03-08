@@ -2,8 +2,8 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
-import Post, { PostDocument } from '../models/Post'; 
-import User,{UserDocument} from '../models/User'; 
+import Post, { PostDocument } from '../models/Post.js'; 
+import User,{UserDocument} from '../models/User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -12,7 +12,7 @@ import jwt from 'jsonwebtoken';
 const jwtSecret = process.env.JWT_SECRET as string;
 
 
-import { userSchema, postSchema } from '../helpers/validationScheme';
+import { userSchema, postSchema } from '../helpers/validationScheme.js';
 
 const router: Router = express.Router();
 

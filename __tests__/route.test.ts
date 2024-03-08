@@ -1,7 +1,7 @@
 import request from 'supertest';
-import app from '../app';
+import app from '../app.js';
 import mongoose from 'mongoose';
-import Post,{PostDocument} from '../models/Post'
+import Post,{PostDocument} from '../models/Post.js'
 
 describe('Blog Routes', () => {
   it('should retrieve all posts with an initial length of 0', async () => {

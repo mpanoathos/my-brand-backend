@@ -1,6 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
-import connectDB from '../config/db';
+import connectDB from '../config/db.js';
 
 let mongoServer: MongoMemoryServer;
 

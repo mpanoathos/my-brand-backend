@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,21 +7,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const express_1 = __importDefault(require("express"));
-const Post_1 = __importDefault(require("../models/Post"));
-const User_1 = __importDefault(require("../models/User"));
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import Post from '../models/Post.js';
+import User from '../models/User.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 // const adminLayout = '../views/layout/admin';
 const jwtSecret = process.env.JWT_SECRET;
-const validationScheme_1 = require("../helpers/validationScheme");
-const router = express_1.default.Router();
+import { userSchema, postSchema } from '../helpers/validationScheme.js';
+const router = express.Router();
 // interface AuthRequest extends Request {
 //   userId?: string;
 // }
@@ -49,12 +44,12 @@ const checkAdmin = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         if (!token) {
             return res.status(401).json({ message: "Unauthorized, please Login" });
         }
-        const decodedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "");
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "");
         console.log('Decoded Token:', decodedToken);
         if (!decodedToken || !decodedToken.userId) {
             return res.status(401).json({ message: "Invalid token" });
         }
-        const user = yield User_1.default.findById(decodedToken.userId);
+        const user = yield User.findById(decodedToken.userId);
         if ((user === null || user === void 0 ? void 0 : user.userRole) === "admin") {
             req.user = user;
             next();
@@ -82,19 +77,19 @@ router.post('/users/login', (req, res) => __awaiter(void 0, void 0, void 0, func
     try {
         const { email, password } = req.body;
         // Validate input
-        const validation = validationScheme_1.userSchema.validate(req.body);
+        const validation = userSchema.validate(req.body);
         if (validation.error) {
             return res.status(400).json({ message: validation.error.details[0].message });
         }
-        const user = yield User_1.default.findOne({ email });
+        const user = yield User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        const isPasswordValid = yield bcrypt_1.default.compare(password, user.password);
+        const isPasswordValid = yield bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        const token = jsonwebtoken_1.default.sign({ userId: user._id }, jwtSecret);
+        const token = jwt.sign({ userId: user._id }, jwtSecret);
         res.cookie('token', token, { httpOnly: true });
         res.json({ message: 'Valid Credentials' });
     }
@@ -108,13 +103,13 @@ router.post('/users/register', (req, res) => __awaiter(void 0, void 0, void 0, f
     try {
         const { email, password } = req.body;
         // Validate input using Joi
-        const validation = validationScheme_1.userSchema.validate({ email, password });
+        const validation = userSchema.validate({ email, password });
         if (validation.error) {
             return res.status(400).json({ message: validation.error.details[0].message });
         }
         console.log(validation.error);
-        const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        const user = yield User_1.default.create({ email, password: hashedPassword });
+        const hashedPassword = yield bcrypt.hash(password, 10);
+        const user = yield User.create({ email, password: hashedPassword });
         res.status(201).json({ message: 'User Created', user });
     }
     catch (error) {
@@ -130,7 +125,7 @@ router.post('/users/register', (req, res) => __awaiter(void 0, void 0, void 0, f
 // Get all Users
 router.get('/users', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = yield User_1.default.find();
+        const users = yield User.find();
         res.json({ users });
     }
     catch (error) {
@@ -143,13 +138,13 @@ router.put('/users/:userId', checkAdmin, (req, res) => __awaiter(void 0, void 0,
     try {
         const userId = req.params.userId;
         const { email, password, userRole } = req.body;
-        const user = yield User_1.default.findById(userId);
+        const user = yield User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
         // Update user fields
         user.email = email || user.email;
-        user.password = password ? yield bcrypt_1.default.hash(password, 10) : user.password; // Hash the new password if provided
+        user.password = password ? yield bcrypt.hash(password, 10) : user.password; // Hash the new password if provided
         user.userRole = userRole || user.userRole;
         // Save the updated user
         yield user.save();
@@ -164,7 +159,7 @@ router.put('/users/:userId', checkAdmin, (req, res) => __awaiter(void 0, void 0,
 router.post('/blogs/:id/like', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const postId = req.params.id;
-        const post = yield Post_1.default.findByIdAndUpdate(postId, { $inc: { likes: 1 } }, { new: true });
+        const post = yield Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } }, { new: true });
         if (post) {
             res.send({ data: post });
         }
@@ -182,7 +177,7 @@ router.get('/blogs/:id/likes', checkAdmin, (req, res) => __awaiter(void 0, void 
     try {
         const postId = req.params.id;
         // Retrieve the post by ID
-        const post = yield Post_1.default.findById(postId);
+        const post = yield Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
@@ -200,7 +195,7 @@ router.post('/blogs/:id/comment', checkAdmin, (req, res) => __awaiter(void 0, vo
     try {
         const postId = req.params.id;
         const { commentText } = req.body;
-        const post = yield Post_1.default.findByIdAndUpdate(postId, { $push: { comments: { text: commentText } } }, { new: true });
+        const post = yield Post.findByIdAndUpdate(postId, { $push: { comments: { text: commentText } } }, { new: true });
         if (post) {
             res.json({ data: post });
         }
@@ -218,7 +213,7 @@ router.get('/blogs/:id/comments', checkAdmin, (req, res) => __awaiter(void 0, vo
     try {
         const { postId } = req.params;
         // Retrieve the post by ID
-        const post = yield Post_1.default.findById(postId);
+        const post = yield Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
@@ -235,15 +230,15 @@ router.get('/blogs/:id/comments', checkAdmin, (req, res) => __awaiter(void 0, vo
 router.post('/blogs/post', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         try {
-            const newPost = new Post_1.default({
+            const newPost = new Post({
                 title: req.body.title,
                 body: req.body.body,
             });
-            const validationPost = validationScheme_1.postSchema.validate(newPost);
+            const validationPost = postSchema.validate(newPost);
             if (validationPost.error) {
                 return res.status(400).json({ message: validationPost.error.details[0].message });
             }
-            yield Post_1.default.create(newPost);
+            yield Post.create(newPost);
             res.json(newPost);
         }
         catch (error) {
@@ -261,7 +256,7 @@ router.put('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, void 0
         if (!title || !body) {
             return res.status(400).json({ error: 'Title and body are required fields' });
         }
-        const updatedPost = yield Post_1.default.findByIdAndUpdate(req.params.id, {
+        const updatedPost = yield Post.findByIdAndUpdate(req.params.id, {
             title,
             body,
             updatedAt: Date.now(),
@@ -281,7 +276,7 @@ router.put('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, void 0
 // DELETE
 router.delete('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const deletedPost = yield Post_1.default.deleteOne({ _id: req.params.id });
+        const deletedPost = yield Post.deleteOne({ _id: req.params.id });
         res.json(deletedPost);
     }
     catch (error) {
@@ -289,5 +284,5 @@ router.delete('/blogs/post/:id', checkAdmin, (req, res) => __awaiter(void 0, voi
         res.status(500).send('Internal Server Error');
     }
 }));
-exports.default = router;
+export default router;
 //# sourceMappingURL=admin.js.map

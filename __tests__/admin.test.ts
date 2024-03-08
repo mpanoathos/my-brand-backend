@@ -1,8 +1,8 @@
 // checkAdmin.test.ts
 import request from 'supertest';
-import app from '../app'; 
-import User from '../models/User'
-import Post from '../models/Post'
+import app from '../app.js'; 
+import User from '../models/Post.js'
+import Post from '../models/Post.js'
 
 describe('Admin features testing', () => {
   it('should allow access for admin user', async () => {

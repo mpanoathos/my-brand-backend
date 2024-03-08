@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,19 +7,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // checkAdmin.test.ts
-const supertest_1 = __importDefault(require("supertest"));
-const app_1 = __importDefault(require("../app"));
-const User_1 = __importDefault(require("../models/User"));
-const Post_1 = __importDefault(require("../models/Post"));
+import request from 'supertest';
+import app from '../app.js';
+import User from '../models/Post.js';
+import Post from '../models/Post.js';
 describe('Admin features testing', () => {
     it('should allow access for admin user', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have an admin user with a valid token
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .get('/users') // Update the route as needed
             .set('Cookie', 'token=valid_admin_token');
         expect(response.status).toBe(200);
@@ -28,20 +23,20 @@ describe('Admin features testing', () => {
     }));
     it('should deny access for non-admin user', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a non-admin user with a valid token
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .get('/users') // Update the route as needed
             .set('Cookie', 'token=valid_non_admin_token');
         expect(response.status).toBe(401);
         // Add more assertions as needed
     }));
     it('should deny access for requests without a valid token', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .get('/users'); // Update the route as needed
         expect(response.status).toBe(401);
         // Add more assertions as needed
     }));
     it('should deny access for requests with an invalid token', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .get('/users') // Update the route as needed
             .set('Cookie', 'token=invalid_token');
         expect(response.status).toBe(401);
@@ -49,21 +44,21 @@ describe('Admin features testing', () => {
     }));
     it('should deny access for requests with expired token', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have an expired token
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .get('/users') // Update the route as needed
             .set('Cookie', 'token=expired_token');
         expect(response.status).toBe(401);
         // Add more assertions as needed
     }));
     it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/login')
             .send({ invalidField: 'invalidValue' });
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 401 if user does not exist', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/login')
             .send({ email: 'nonexistent@example.com', password: 'password123' });
         expect(response.status).toBe(401);
@@ -71,7 +66,7 @@ describe('Admin features testing', () => {
     }));
     it('should return 401 if password is incorrect', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a valid user with known credentials
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/login')
             .send({ email: 'valid@example.com', password: 'incorrectPassword' });
         expect(response.status).toBe(401);
@@ -79,7 +74,7 @@ describe('Admin features testing', () => {
     }));
     it('should return 200 and a valid token on successful login', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a valid user with known credentials
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/login')
             .send({ email: 'valid@example.com', password: 'validPassword' });
         expect(response.status).toBe(200);
@@ -88,31 +83,31 @@ describe('Admin features testing', () => {
     }));
     it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Simulate an internal server error
-        jest.spyOn(User_1.default, 'findOne').mockImplementationOnce(() => {
+        jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
             throw new Error('Simulated Internal Server Error');
         });
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/login')
             .send({ email: 'valid@example.com', password: 'validPassword' });
         expect(response.status).toBe(500);
         expect(response.body).toHaveProperty('message', 'Internal Server Error');
     }));
     it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ invalidField: 'invalidValue' });
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 400 if email or password is missing', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'valid@example.com' });
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 400 if email or password is invalid', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'invalid-email', password: 'short' });
         expect(response.status).toBe(400);
@@ -120,14 +115,14 @@ describe('Admin features testing', () => {
     }));
     it('should return 409 if user already exists', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a user with a known email
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'existing@example.com', password: 'validPassword' });
         expect(response.status).toBe(409);
         expect(response.body).toHaveProperty('message', 'User already in use');
     }));
     it('should return 201 and create a new user on successful registration', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'newuser@example.com', password: 'validPassword' });
         expect(response.status).toBe(201);
@@ -136,31 +131,31 @@ describe('Admin features testing', () => {
     }));
     it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Simulate an internal server error
-        jest.spyOn(User_1.default, 'create').mockImplementationOnce(() => {
+        jest.spyOn(User, 'create').mockImplementationOnce(() => {
             throw new Error('Simulated Internal Server Error');
         });
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'newuser@example.com', password: 'validPassword' });
         expect(response.status).toBe(500);
         expect(response.body).toHaveProperty('message', 'Internal server error');
     }));
     it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ invalidField: 'invalidValue' });
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 400 if email or password is missing', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'valid@example.com' });
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 400 if email or password is invalid', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'invalid-email', password: 'short' });
         expect(response.status).toBe(400);
@@ -168,14 +163,14 @@ describe('Admin features testing', () => {
     }));
     it('should return 409 if user already exists', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a user with a known email
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'existing@example.com', password: 'validPassword' });
         expect(response.status).toBe(409);
         expect(response.body).toHaveProperty('message', 'User already in use');
     }));
     it('should return 201 and create a new user on successful registration', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'newuser@example.com', password: 'validPassword' });
         expect(response.status).toBe(201);
@@ -184,24 +179,24 @@ describe('Admin features testing', () => {
     }));
     it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Simulate an internal server error
-        jest.spyOn(User_1.default, 'create').mockImplementationOnce(() => {
+        jest.spyOn(User, 'create').mockImplementationOnce(() => {
             throw new Error('Simulated Internal Server Error');
         });
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/users/register')
             .send({ email: 'newuser@example.com', password: 'validPassword' });
         expect(response.status).toBe(500);
         expect(response.body).toHaveProperty('message', 'Internal server error');
     }));
     it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .put('/users/someUserId')
             .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
     }));
     it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .put('/users/someUserId')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send({ invalidField: 'invalidValue' });
@@ -209,7 +204,7 @@ describe('Admin features testing', () => {
         expect(response.body).toHaveProperty('message');
     }));
     it('should return 404 if user not found', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .put('/users/nonexistentUserId')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
@@ -218,7 +213,7 @@ describe('Admin features testing', () => {
     }));
     it('should return 200 and update user on successful update', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a valid user with known userId
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .put('/users/someUserId')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
@@ -228,10 +223,10 @@ describe('Admin features testing', () => {
     }));
     it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Simulate an internal server error
-        jest.spyOn(User_1.default, 'findById').mockImplementationOnce(() => {
+        jest.spyOn(User, 'findById').mockImplementationOnce(() => {
             throw new Error('Simulated Internal Server Error');
         });
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .put('/users/someUserId')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
@@ -239,14 +234,14 @@ describe('Admin features testing', () => {
         expect(response.body).toHaveProperty('message', 'Internal Server Error');
     }));
     it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/blogs/somePostId/like')
             .send();
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
     }));
     it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/blogs/nonexistentPostId/like')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send();
@@ -255,7 +250,7 @@ describe('Admin features testing', () => {
     }));
     it('should return 200 and updated post data on successful like', () => __awaiter(void 0, void 0, void 0, function* () {
         // Assuming you have a valid post with known postId
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/blogs/somePostId/like')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send();
@@ -265,10 +260,10 @@ describe('Admin features testing', () => {
     }));
     it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Simulate an internal server error
-        jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementationOnce(() => {
+        jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
             throw new Error('Simulated Internal Server Error');
         });
-        const response = yield (0, supertest_1.default)(app_1.default)
+        const response = yield request(app)
             .post('/blogs/somePostId/like')
             .set('Cookie', 'token=validAdminToken') // Add a valid admin token
             .send();
@@ -277,14 +272,14 @@ describe('Admin features testing', () => {
     }));
     describe('Get Likes for a Post Endpoint', () => {
         it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/likes')
                 .send();
             expect(response.status).toBe(401);
             expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
         }));
         it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/nonexistentPostId/likes')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -293,7 +288,7 @@ describe('Admin features testing', () => {
         }));
         it('should return 200 and likes count for a valid post', () => __awaiter(void 0, void 0, void 0, function* () {
             // Assuming you have a valid post with known postId
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/likes')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -302,10 +297,10 @@ describe('Admin features testing', () => {
         }));
         it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
             // Simulate an internal server error
-            jest.spyOn(Post_1.default, 'findById').mockImplementationOnce(() => {
+            jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
                 throw new Error('Simulated Internal Server Error');
             });
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/likes')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -315,14 +310,14 @@ describe('Admin features testing', () => {
     });
     describe('Comment on a Post Endpoint', () => {
         it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .post('/blogs/somePostId/comment')
                 .send();
             expect(response.status).toBe(401);
             expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
         }));
         it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .post('/blogs/nonexistentPostId/comment')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ commentText: 'Test comment' });
@@ -331,7 +326,7 @@ describe('Admin features testing', () => {
         }));
         it('should return 200 and updated post data on successful comment', () => __awaiter(void 0, void 0, void 0, function* () {
             // Assuming you have a valid post with known postId
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .post('/blogs/somePostId/comment')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ commentText: 'Test comment' });
@@ -342,10 +337,10 @@ describe('Admin features testing', () => {
         }));
         it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
             // Simulate an internal server error
-            jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementationOnce(() => {
+            jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
                 throw new Error('Simulated Internal Server Error');
             });
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .post('/blogs/somePostId/comment')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ commentText: 'Test comment' });
@@ -355,14 +350,14 @@ describe('Admin features testing', () => {
     });
     describe('Get Comments for a Post Endpoint', () => {
         it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/comments')
                 .send();
             expect(response.status).toBe(401);
             expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
         }));
         it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/nonexistentPostId/comments')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -371,7 +366,7 @@ describe('Admin features testing', () => {
         }));
         it('should return 200 and comments array if post found', () => __awaiter(void 0, void 0, void 0, function* () {
             // Assuming you have a valid post with known postId
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/comments')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -381,10 +376,10 @@ describe('Admin features testing', () => {
         }));
         it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
             // Simulate an internal server error
-            jest.spyOn(Post_1.default, 'findById').mockImplementationOnce(() => {
+            jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
                 throw new Error('Simulated Internal Server Error');
             });
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .get('/blogs/somePostId/comments')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send();
@@ -394,14 +389,14 @@ describe('Admin features testing', () => {
     });
     describe('Update Post Endpoint', () => {
         it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .put('/blogs/post/somePostId')
                 .send({ title: 'Updated Title', body: 'Updated Body' });
             expect(response.status).toBe(401);
             expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
         }));
         it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .put('/blogs/post/nonexistentPostId')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ title: 'Updated Title', body: 'Updated Body' });
@@ -409,7 +404,7 @@ describe('Admin features testing', () => {
             expect(response.body).toBe('Post not found');
         }));
         it('should return 400 if title or body are missing', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .put('/blogs/post/somePostId')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ title: 'Updated Title' });
@@ -418,7 +413,7 @@ describe('Admin features testing', () => {
         }));
         it('should return 200 and updated post if successful', () => __awaiter(void 0, void 0, void 0, function* () {
             // Assuming you have a valid post with known postId
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .put('/blogs/post/somePostId')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ title: 'Updated Title', body: 'Updated Body' });
@@ -429,10 +424,10 @@ describe('Admin features testing', () => {
         }));
         it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
             // Simulate an internal server error
-            jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementationOnce(() => {
+            jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
                 throw new Error('Simulated Internal Server Error');
             });
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .put('/blogs/post/somePostId')
                 .set('Cookie', 'token=validAdminToken') // Add a valid admin token
                 .send({ title: 'Updated Title', body: 'Updated Body' });
@@ -442,14 +437,14 @@ describe('Admin features testing', () => {
     });
     describe('Delete Post Endpoint', () => {
         it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .delete('/blogs/post/somePostId')
                 .send();
             expect(response.status).toBe(401);
             expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
         }));
         it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .delete('/blogs/post/nonexistentPostId')
                 .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
             expect(response.status).toBe(404);
@@ -457,7 +452,7 @@ describe('Admin features testing', () => {
         }));
         it('should return 200 and deleted post info if successful', () => __awaiter(void 0, void 0, void 0, function* () {
             // Assuming you have a valid post with known postId
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .delete('/blogs/post/somePostId')
                 .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
             expect(response.status).toBe(200);
@@ -467,10 +462,10 @@ describe('Admin features testing', () => {
         }));
         it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
             // Simulate an internal server error
-            jest.spyOn(Post_1.default, 'deleteOne').mockImplementationOnce(() => {
+            jest.spyOn(Post, 'deleteOne').mockImplementationOnce(() => {
                 throw new Error('Simulated Internal Server Error');
             });
-            const response = yield (0, supertest_1.default)(app_1.default)
+            const response = yield request(app)
                 .delete('/blogs/post/somePostId')
                 .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
             expect(response.status).toBe(500);

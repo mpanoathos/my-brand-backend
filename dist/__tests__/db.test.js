@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,31 +7,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongodb_memory_server_1 = require("mongodb-memory-server");
-const mongoose_1 = __importDefault(require("mongoose"));
-const db_1 = __importDefault(require("../config/db"));
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
+import connectDB from '../config/db.js';
 let mongoServer;
 beforeAll(() => __awaiter(void 0, void 0, void 0, function* () {
-    mongoServer = new mongodb_memory_server_1.MongoMemoryServer();
+    mongoServer = new MongoMemoryServer();
     const mongoUri = yield mongoServer.getUri();
     process.env.MONGODB_URI = mongoUri;
     // Mocking the mongoose connection
-    jest.spyOn(mongoose_1.default, 'connect').mockImplementation(() => Promise.resolve({}));
+    jest.spyOn(mongoose, 'connect').mockImplementation(() => Promise.resolve({}));
 }));
 afterAll(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield mongoose_1.default.disconnect();
+    yield mongoose.disconnect();
     yield mongoServer.stop();
 }));
 describe('Database Connection', () => {
     it('should connect to the database', () => __awaiter(void 0, void 0, void 0, function* () {
-        yield (0, db_1.default)();
+        yield connectDB();
         // Add more assertions based on your application's behavior
         // For example, you can check if the connection is successful or if certain collections exist
-        expect(mongoose_1.default.connect).toHaveBeenCalledWith(process.env.MONGODB_URI, expect.any(Object));
+        expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URI, expect.any(Object));
     }));
     // Add more tests as needed
 });
