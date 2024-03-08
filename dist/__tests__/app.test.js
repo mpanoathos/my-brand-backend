@@ -12,16 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        mongoose_1.default.set('strictQuery', false);
-        const conn = yield mongoose_1.default.connect(process.env.MONGODB_URI);
-        console.log(`Database connected ${conn.connection.host}`);
-    }
-    catch (error) {
-        console.log(error);
-    }
+const supertest_1 = __importDefault(require("supertest"));
+const app_1 = __importDefault(require("../app"));
+describe('Integration Tests for app.ts', () => {
+    it('should handle GET request to /api/docs', () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app_1.default).get('/api/docs');
+        expect(response.status).toBe(301);
+        // Add more assertions based on your application's behavior
+    }));
+    // Add more integration tests for different routes and functionalities
 });
-exports.default = connectDB;
-//# sourceMappingURL=db.js.map
+//# sourceMappingURL=app.test.js.map

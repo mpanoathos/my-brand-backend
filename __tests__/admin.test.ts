@@ -376,4 +376,202 @@ describe('Get Likes for a Post Endpoint', () => {
   });
 });
 
+describe('Comment on a Post Endpoint', () => {
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .post('/blogs/somePostId/comment')
+      .send();
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
   });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .post('/blogs/nonexistentPostId/comment')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ commentText: 'Test comment' });
+
+    expect(response.status).toBe(404);
+    expect(response.text).toBe('Post not found');
+  });
+
+  it('should return 200 and updated post data on successful comment', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .post('/blogs/somePostId/comment')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ commentText: 'Test comment' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body.data).toHaveProperty('comments');
+    expect(response.body.data.comments).toHaveLength(1); // Assuming the comment was added successfully
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .post('/blogs/somePostId/comment')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ commentText: 'Test comment' });
+
+    expect(response.status).toBe(500);
+    expect(response.text).toBe('Internal Server Error');
+  });
+});
+describe('Get Comments for a Post Endpoint', () => {
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .get('/blogs/somePostId/comments')
+      .send();
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
+  });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .get('/blogs/nonexistentPostId/comments')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('message', 'Post not found');
+  });
+
+  it('should return 200 and comments array if post found', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .get('/blogs/somePostId/comments')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('comments');
+    expect(response.body.comments).toBeInstanceOf(Array);
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .get('/blogs/somePostId/comments')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send();
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('message', 'Internal Server Error');
+  });
+});
+describe('Update Post Endpoint', () => {
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .put('/blogs/post/somePostId')
+      .send({ title: 'Updated Title', body: 'Updated Body' });
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
+  });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .put('/blogs/post/nonexistentPostId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ title: 'Updated Title', body: 'Updated Body' });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toBe('Post not found');
+  });
+
+  it('should return 400 if title or body are missing', async () => {
+    const response = await request(app)
+      .put('/blogs/post/somePostId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ title: 'Updated Title' });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty('error', 'Title and body are required fields');
+  });
+
+  it('should return 200 and updated post if successful', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .put('/blogs/post/somePostId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ title: 'Updated Title', body: 'Updated Body' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('_id');
+    expect(response.body).toHaveProperty('title', 'Updated Title');
+    expect(response.body).toHaveProperty('body', 'Updated Body');
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .put('/blogs/post/somePostId')
+      .set('Cookie', 'token=validAdminToken') // Add a valid admin token
+      .send({ title: 'Updated Title', body: 'Updated Body' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toHaveProperty('error', 'Internal Server Error');
+  });
+});
+describe('Delete Post Endpoint', () => {
+  it('should return 401 if not authorized as admin', async () => {
+    const response = await request(app)
+      .delete('/blogs/post/somePostId')
+      .send();
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
+  });
+
+  it('should return 404 if post not found', async () => {
+    const response = await request(app)
+      .delete('/blogs/post/nonexistentPostId')
+      .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
+
+    expect(response.status).toBe(404);
+    expect(response.body).toBe('Post not found');
+  });
+
+  it('should return 200 and deleted post info if successful', async () => {
+    // Assuming you have a valid post with known postId
+    const response = await request(app)
+      .delete('/blogs/post/somePostId')
+      .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('n', 1); // Number of deleted documents
+    expect(response.body).toHaveProperty('ok', 1);
+    expect(response.body).toHaveProperty('deletedCount', 1);
+  });
+
+  it('should return 500 on internal server error', async () => {
+    // Simulate an internal server error
+    jest.spyOn(Post, 'deleteOne').mockImplementationOnce(() => {
+      throw new Error('Simulated Internal Server Error');
+    });
+
+    const response = await request(app)
+      .delete('/blogs/post/somePostId')
+      .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
+
+    expect(response.status).toBe(500);
+    expect(response.text).toBe('Internal Server Error');
+  });
+});
+});
