@@ -9,8 +9,8 @@ on:
     branches:
       -main
 env:
-  MONGO_URL_TEST: ${{MONGO_URI_TEST}}
-  jwt_secret: ${{JWT_SECRET_TEST}}
+  MONGO_URL_TEST: ${{secrets.MONGO_URI_TEST}}
+  jwt_secret: ${{secrets.JWT_SECRET_TEST}}
 jobs:
   tests:
     name: Run tests
