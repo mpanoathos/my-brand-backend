@@ -8,6 +8,7 @@ interface Comment {
 export interface PostDocument extends Document {
   title: string;
   body: string;
+  // image:string;
   likes: number;
   comments: Comment[];
   createdAt?: Date;
@@ -30,6 +31,10 @@ const PostSchema: Schema<PostDocument> = new Schema({
     type: String,
     required: true,
   },
+  // image: {
+  //   type:String,
+  //   required:true,
+  // },
   likes: {
     type: Number,
     default: 0,

@@ -1,30 +1,51 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// Import the function to test
+import connectDB from '../config/db';
 import mongoose from 'mongoose';
-import connectDB from '../config/db.js';
 
-let mongoServer: MongoMemoryServer;
+// Mock mongoose module
+jest.mock('mongoose', () => ({
+  set: jest.fn(),
+  connect: jest.fn(),
+}));
 
-beforeAll(async () => {
-  mongoServer = new MongoMemoryServer();
-  const mongoUri = await mongoServer.getUri();
-  process.env.MONGODB_URI = mongoUri;
+// Define environment variable
+process.env.MONGODB_URI_TEST = 'mongodb+srv://athos:barera0009@cluster0.myuobr9.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0';
 
-  // Mocking the mongoose connection
-  jest.spyOn(mongoose, 'connect').mockImplementation(() => Promise.resolve({} as mongoose.Mongoose));
-});
-
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
-});
-
-describe('Database Connection', () => {
-  it('should connect to the database', async () => {
-    await connectDB();
-    // Add more assertions based on your application's behavior
-    // For example, you can check if the connection is successful or if certain collections exist
-    expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URI, expect.any(Object));
+describe('connectDB function', () => {
+  afterEach(() => {
+    jest.clearAllMocks(); // Clear mock function calls after each test
   });
 
-  // Add more tests as needed
+  it('should connect to the database', async () => {
+    // Mock successful connection
+    const mockConnection = {
+      connection: {
+        host: 'localhost',
+      },
+    };
+    (mongoose.connect as jest.Mock).mockResolvedValueOnce(mockConnection);
+
+    // Call the function
+    await connectDB();
+
+    // Check if mongoose.connect is called with the correct URI
+    expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URI_TEST);
+
+    // Check if console.log is called with the expected message
+    expect(console.log).toHaveBeenCalledWith('Database connected localhost');
+  });
+
+  it('should handle database connection error', async () => {
+    // Mock connection error
+    const mockError = new Error('Connection failed');
+    (mongoose.connect as jest.Mock).mockImplementationOnce(() => {
+      throw mockError;
+    });
+
+    // Call the function
+    await connectDB();
+
+    // Check if console.log is called with the error message
+    expect(console.log).toHaveBeenCalledWith(mockError);
+  });
 });

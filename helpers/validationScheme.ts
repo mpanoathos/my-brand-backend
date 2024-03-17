@@ -11,9 +11,17 @@ const userSchema = Joi.object({
 const postSchema = Joi.object({
   title: Joi.string().required(),
   body: Joi.string().required(),
+  image: Joi.string(),
 }).options({ allowUnknown: true, stripUnknown: true });
 
+//Message Validations
+const messageSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  message: Joi.string().required(),
+}).options({ allowUnknown: true, stripUnknown: true });
 export {
   userSchema,
-  postSchema
+  postSchema,
+  messageSchema,
 };

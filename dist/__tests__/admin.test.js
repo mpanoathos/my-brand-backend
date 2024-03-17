@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,470 +8,537 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-// checkAdmin.test.ts
-import request from 'supertest';
-import app from '../app.js';
-import User from '../models/Post.js';
-import Post from '../models/Post.js';
-describe('Admin features testing', () => {
-    it('should allow access for admin user', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have an admin user with a valid token
-        const response = yield request(app)
-            .get('/users') // Update the route as needed
-            .set('Cookie', 'token=valid_admin_token');
-        expect(response.status).toBe(200);
-        // Add more assertions as needed
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+// Import necessary modules for testing
+const supertest_1 = __importDefault(require("supertest"));
+const app_1 = __importDefault(require("../app")); // Assuming your Express app instance is exported as 'app'
+const User_1 = __importDefault(require("../models/User"));
+const Post_1 = __importDefault(require("../models/Post"));
+const Messages_1 = __importDefault(require("../models/Messages"));
+const http_1 = require("http");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+let server;
+const jwtSecret = process.env.JWT_SECRET;
+beforeAll((done) => {
+    server = (0, http_1.createServer)(app_1.default);
+    server.listen(7000, done);
+});
+afterAll((done) => {
+    server.close(done);
+});
+// Use Jest's describe() function to group tests for a specific endpoint or feature
+describe('checkAdmin Middleware', () => {
+    it('should deny access for non-admin user with valid token', () => __awaiter(void 0, void 0, void 0, function* () {
+        const regularUser = {
+            _id: 'regularUserId',
+            userRole: 'regular'
+        };
+        const token = jsonwebtoken_1.default.sign({ userId: regularUser._id }, jwtSecret);
+        yield (0, supertest_1.default)(app_1.default)
+            .get('/protected-route') // Assuming this route is protected by checkAdmin middleware
+            .set('Authorization', `Bearer ${token}`)
+            .expect(401);
     }));
-    it('should deny access for non-admin user', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a non-admin user with a valid token
-        const response = yield request(app)
-            .get('/users') // Update the route as needed
-            .set('Cookie', 'token=valid_non_admin_token');
-        expect(response.status).toBe(401);
-        // Add more assertions as needed
+    it('should allow access for admin user with valid token', () => __awaiter(void 0, void 0, void 0, function* () {
+        const adminUser = {
+            _id: 'adminUserId',
+            userRole: 'admin'
+        };
+        const token = jsonwebtoken_1.default.sign({ userId: adminUser._id }, jwtSecret);
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .get('/protected-route') // Assuming this route is protected by checkAdmin middleware
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200);
+        // Add assertions for the response as needed
     }));
-    it('should deny access for requests without a valid token', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .get('/users'); // Update the route as needed
-        expect(response.status).toBe(401);
-        // Add more assertions as needed
+    it('should return 401 for requests without authorization header', () => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, supertest_1.default)(app_1.default)
+            .get('/protected-route') // Assuming this route is protected by checkAdmin middleware
+            .expect(401);
     }));
-    it('should deny access for requests with an invalid token', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .get('/users') // Update the route as needed
-            .set('Cookie', 'token=invalid_token');
-        expect(response.status).toBe(401);
-        // Add more assertions as needed
+    it('should return 401 for requests with invalid token format', () => __awaiter(void 0, void 0, void 0, function* () {
+        yield (0, supertest_1.default)(app_1.default)
+            .get('/protected-route') // Assuming this route is protected by checkAdmin middleware
+            .set('Authorization', 'InvalidTokenFormat')
+            .expect(401);
     }));
-    it('should deny access for requests with expired token', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have an expired token
-        const response = yield request(app)
-            .get('/users') // Update the route as needed
-            .set('Cookie', 'token=expired_token');
-        expect(response.status).toBe(401);
-        // Add more assertions as needed
-    }));
-    it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
+    // Add more test cases to cover other scenarios like expired tokens, invalid tokens, etc.
+});
+describe('POST /users/login', () => {
+    it('should return a JWT token if login credentials are valid', () => __awaiter(void 0, void 0, void 0, function* () {
+        const userData = {
+            email: 'example@example.com',
+            password: 'password123'
+        };
+        const response = yield (0, supertest_1.default)(app_1.default)
             .post('/users/login')
-            .send({ invalidField: 'invalidValue' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
+            .send(userData)
+            .expect(200);
+        expect(response.body).toHaveProperty('token');
+        expect(response.body).toHaveProperty('isAdmin', false); // Assuming userRole is not admin by default
+    }));
+    it('should return 400 if invalid credentials are provided', () => __awaiter(void 0, void 0, void 0, function* () {
+        const invalidData = {
+            email: 'example@example.com'
+            // No password provided intentionally to make it invalid
+        };
+        yield (0, supertest_1.default)(app_1.default)
+            .post('/users/login')
+            .send(invalidData)
+            .expect(400);
     }));
     it('should return 401 if user does not exist', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
+        const nonExistentUser = {
+            email: 'nonexistent@example.com',
+            password: 'password123'
+        };
+        yield (0, supertest_1.default)(app_1.default)
             .post('/users/login')
-            .send({ email: 'nonexistent@example.com', password: 'password123' });
-        expect(response.status).toBe(401);
-        expect(response.body).toHaveProperty('message', 'Invalid credentials');
+            .send(nonExistentUser)
+            .expect(401);
     }));
-    it('should return 401 if password is incorrect', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a valid user with known credentials
-        const response = yield request(app)
+    it('should return 401 if invalid password is provided', () => __awaiter(void 0, void 0, void 0, function* () {
+        const incorrectPassword = {
+            email: 'example@example.com',
+            password: 'incorrectpassword'
+        };
+        yield (0, supertest_1.default)(app_1.default)
             .post('/users/login')
-            .send({ email: 'valid@example.com', password: 'incorrectPassword' });
-        expect(response.status).toBe(401);
-        expect(response.body).toHaveProperty('message', 'Invalid credentials');
+            .send(incorrectPassword)
+            .expect(401);
     }));
-    it('should return 200 and a valid token on successful login', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a valid user with known credentials
-        const response = yield request(app)
-            .post('/users/login')
-            .send({ email: 'valid@example.com', password: 'validPassword' });
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('message', 'Valid Credentials');
-        expect(response.headers['set-cookie']).toBeDefined();
+});
+describe('POST /users/register', () => {
+    it('should register a new user and return a JWT token', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request to the register endpoint with valid user data
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/users/register')
+            .send({ email: 'test@example.com', password: 'testpassword', userRole: 'user' });
+        // Check if the response status code is 201
+        expect(response.status).toBe(201);
+        // Check if the response contains a JWT token
+        expect(response.body).toHaveProperty('token');
+        // Check if the response contains a message indicating successful user creation
+        expect(response.body.message).toBe('User Created');
+        // Check if the response contains user data
+        expect(response.body).toHaveProperty('user');
     }));
-    it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Simulate an internal server error
-        jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
-            throw new Error('Simulated Internal Server Error');
-        });
-        const response = yield request(app)
-            .post('/users/login')
-            .send({ email: 'valid@example.com', password: 'validPassword' });
+    it('should return a 400 error for invalid input data', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request to the register endpoint with invalid user data
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/users/register')
+            .send({ email: 'invalidemail', password: '123', userRole: 'invalidrole' });
+        // Check if the response status code is 400
+        expect(response.status).toBe(400);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message');
+    }));
+    it('should return a 409 error if the user already exists', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request to the register endpoint with an existing email
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/users/register')
+            .send({ email: 'test@example.com', password: 'testpassword', userRole: 'user' });
+        // Check if the response status code is 409
+        expect(response.status).toBe(409);
+        // Check if the response contains an error message
+        expect(response.body.message).toBe('User already in use');
+    }));
+    it('should return a 500 error for the internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('users/register')
+            .send({ email: 'test@example.com', password: 'testpassword', userRole: 'user' });
         expect(response.status).toBe(500);
+        expect(response.body.message).toBe('Internal Server Error');
+    }));
+});
+describe('GET /users', () => {
+    it('should get all users', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a GET request to the users endpoint
+        const response = yield (0, supertest_1.default)(app_1.default).get('/users');
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains an array of users
+        expect(response.body).toHaveProperty('users');
+        expect(Array.isArray(response.body.users)).toBe(true);
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the User.find() method to force an error
+        jest.spyOn(User_1.default, 'find').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a GET request to the users endpoint
+        const response = yield (0, supertest_1.default)(app_1.default).get('/users');
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
         expect(response.body).toHaveProperty('message', 'Internal Server Error');
     }));
-    it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ invalidField: 'invalidValue' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 400 if email or password is missing', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'valid@example.com' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 400 if email or password is invalid', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'invalid-email', password: 'short' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 409 if user already exists', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a user with a known email
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'existing@example.com', password: 'validPassword' });
-        expect(response.status).toBe(409);
-        expect(response.body).toHaveProperty('message', 'User already in use');
-    }));
-    it('should return 201 and create a new user on successful registration', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'newuser@example.com', password: 'validPassword' });
-        expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('message', 'User Created');
-        expect(response.body).toHaveProperty('user');
-    }));
-    it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Simulate an internal server error
-        jest.spyOn(User, 'create').mockImplementationOnce(() => {
-            throw new Error('Simulated Internal Server Error');
+});
+describe('PUT /users/:userId', () => {
+    it('should update a user successfully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new user for testing
+        const newUser = yield User_1.default.create({
+            email: 'test@example.com',
+            password: 'testpassword',
+            userRole: 'user'
         });
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'newuser@example.com', password: 'validPassword' });
-        expect(response.status).toBe(500);
-        expect(response.body).toHaveProperty('message', 'Internal server error');
-    }));
-    it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ invalidField: 'invalidValue' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 400 if email or password is missing', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'valid@example.com' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 400 if email or password is invalid', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'invalid-email', password: 'short' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 409 if user already exists', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a user with a known email
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'existing@example.com', password: 'validPassword' });
-        expect(response.status).toBe(409);
-        expect(response.body).toHaveProperty('message', 'User already in use');
-    }));
-    it('should return 201 and create a new user on successful registration', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'newuser@example.com', password: 'validPassword' });
-        expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('message', 'User Created');
+        // Make a PUT request to update the user with new data
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put(`/users/${newUser._id}`)
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ email: 'newemail@example.com', password: 'newpassword', userRole: 'admin' });
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains a message indicating successful user update
+        expect(response.body).toHaveProperty('message', 'User updated successfully');
+        // Check if the response contains the updated user data
         expect(response.body).toHaveProperty('user');
+        expect(response.body.user.email).toBe('newemail@example.com');
+        expect(response.body.user.userRole).toBe('admin');
     }));
-    it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Simulate an internal server error
-        jest.spyOn(User, 'create').mockImplementationOnce(() => {
-            throw new Error('Simulated Internal Server Error');
-        });
-        const response = yield request(app)
-            .post('/users/register')
-            .send({ email: 'newuser@example.com', password: 'validPassword' });
-        expect(response.status).toBe(500);
-        expect(response.body).toHaveProperty('message', 'Internal server error');
-    }));
-    it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .put('/users/someUserId')
-            .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
-        expect(response.status).toBe(401);
-        expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
-    }));
-    it('should return 400 if invalid input', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .put('/users/someUserId')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send({ invalidField: 'invalidValue' });
-        expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty('message');
-    }));
-    it('should return 404 if user not found', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .put('/users/nonexistentUserId')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+    it('should return a 404 error if user is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a PUT request with an invalid user ID
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put('/users/invaliduserid')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ email: 'newemail@example.com', password: 'newpassword', userRole: 'admin' });
+        // Check if the response status code is 404
         expect(response.status).toBe(404);
+        // Check if the response contains an error message
         expect(response.body).toHaveProperty('message', 'User not found');
     }));
-    it('should return 200 and update user on successful update', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a valid user with known userId
-        const response = yield request(app)
-            .put('/users/someUserId')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('message', 'User updated successfully');
-        expect(response.body).toHaveProperty('user');
-    }));
-    it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Simulate an internal server error
-        jest.spyOn(User, 'findById').mockImplementationOnce(() => {
-            throw new Error('Simulated Internal Server Error');
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the User.findById() method to force an error
+        jest.spyOn(User_1.default, 'findById').mockImplementation(() => {
+            throw new Error('Internal Server Error');
         });
-        const response = yield request(app)
-            .put('/users/someUserId')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send({ email: 'newemail@example.com', password: 'newPassword', userRole: 'admin' });
+        // Make a PUT request to update a user
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put('/users/validuserid')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ email: 'newemail@example.com', password: 'newpassword', userRole: 'admin' });
+        // Check if the response status code is 500
         expect(response.status).toBe(500);
+        // Check if the response contains an error message
         expect(response.body).toHaveProperty('message', 'Internal Server Error');
     }));
-    it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/blogs/somePostId/like')
-            .send();
-        expect(response.status).toBe(401);
-        expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
+});
+describe('POST /blogs/:id/like', () => {
+    it('should increment the like count of a post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post for testing
+        const newPost = yield Post_1.default.create({
+            title: 'Test Post',
+            body: 'Lorem ipsum dolor sit amet',
+            likes: 0 // Start with 0 likes
+        });
+        // Make a POST request to like the post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post(`/blogs/${newPost._id}/like`)
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the updated post data
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data.likes).toBe(newPost.likes + 1);
     }));
-    it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield request(app)
-            .post('/blogs/nonexistentPostId/like')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send();
+    it('should return a 404 error if the post is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request with an invalid post ID
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/invalidpostid/like')
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 404
         expect(response.status).toBe(404);
+        // Check if the response contains an error message
         expect(response.text).toBe('Post not found');
     }));
-    it('should return 200 and updated post data on successful like', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Assuming you have a valid post with known postId
-        const response = yield request(app)
-            .post('/blogs/somePostId/like')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send();
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('data');
-        expect(response.body.data).toHaveProperty('likes');
-    }));
-    it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-        // Simulate an internal server error
-        jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
-            throw new Error('Simulated Internal Server Error');
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.findByIdAndUpdate() method to force an error
+        jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementation(() => {
+            throw new Error('Internal Server Error');
         });
-        const response = yield request(app)
-            .post('/blogs/somePostId/like')
-            .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-            .send();
+        // Make a POST request to like a post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/validpostid/like')
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 500
         expect(response.status).toBe(500);
+        // Check if the response contains an error message
         expect(response.text).toBe('Internal Server Error');
     }));
-    describe('Get Likes for a Post Endpoint', () => {
-        it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .get('/blogs/somePostId/likes')
-                .send();
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
-        }));
-        it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .get('/blogs/nonexistentPostId/likes')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('message', 'Post not found');
-        }));
-        it('should return 200 and likes count for a valid post', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Assuming you have a valid post with known postId
-            const response = yield request(app)
-                .get('/blogs/somePostId/likes')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('likes');
-        }));
-        it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Simulate an internal server error
-            jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
-                throw new Error('Simulated Internal Server Error');
-            });
-            const response = yield request(app)
-                .get('/blogs/somePostId/likes')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('message', 'Internal Server Error');
-        }));
-    });
-    describe('Comment on a Post Endpoint', () => {
-        it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .post('/blogs/somePostId/comment')
-                .send();
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'You are not allowed to perform this action');
-        }));
-        it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .post('/blogs/nonexistentPostId/comment')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ commentText: 'Test comment' });
-            expect(response.status).toBe(404);
-            expect(response.text).toBe('Post not found');
-        }));
-        it('should return 200 and updated post data on successful comment', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Assuming you have a valid post with known postId
-            const response = yield request(app)
-                .post('/blogs/somePostId/comment')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ commentText: 'Test comment' });
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('data');
-            expect(response.body.data).toHaveProperty('comments');
-            expect(response.body.data.comments).toHaveLength(1); // Assuming the comment was added successfully
-        }));
-        it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Simulate an internal server error
-            jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
-                throw new Error('Simulated Internal Server Error');
-            });
-            const response = yield request(app)
-                .post('/blogs/somePostId/comment')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ commentText: 'Test comment' });
-            expect(response.status).toBe(500);
-            expect(response.text).toBe('Internal Server Error');
-        }));
-    });
-    describe('Get Comments for a Post Endpoint', () => {
-        it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .get('/blogs/somePostId/comments')
-                .send();
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
-        }));
-        it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .get('/blogs/nonexistentPostId/comments')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('message', 'Post not found');
-        }));
-        it('should return 200 and comments array if post found', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Assuming you have a valid post with known postId
-            const response = yield request(app)
-                .get('/blogs/somePostId/comments')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('comments');
-            expect(response.body.comments).toBeInstanceOf(Array);
-        }));
-        it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Simulate an internal server error
-            jest.spyOn(Post, 'findById').mockImplementationOnce(() => {
-                throw new Error('Simulated Internal Server Error');
-            });
-            const response = yield request(app)
-                .get('/blogs/somePostId/comments')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send();
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('message', 'Internal Server Error');
-        }));
-    });
-    describe('Update Post Endpoint', () => {
-        it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .put('/blogs/post/somePostId')
-                .send({ title: 'Updated Title', body: 'Updated Body' });
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
-        }));
-        it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .put('/blogs/post/nonexistentPostId')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ title: 'Updated Title', body: 'Updated Body' });
-            expect(response.status).toBe(404);
-            expect(response.body).toBe('Post not found');
-        }));
-        it('should return 400 if title or body are missing', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .put('/blogs/post/somePostId')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ title: 'Updated Title' });
-            expect(response.status).toBe(400);
-            expect(response.body).toHaveProperty('error', 'Title and body are required fields');
-        }));
-        it('should return 200 and updated post if successful', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Assuming you have a valid post with known postId
-            const response = yield request(app)
-                .put('/blogs/post/somePostId')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ title: 'Updated Title', body: 'Updated Body' });
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('_id');
-            expect(response.body).toHaveProperty('title', 'Updated Title');
-            expect(response.body).toHaveProperty('body', 'Updated Body');
-        }));
-        it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Simulate an internal server error
-            jest.spyOn(Post, 'findByIdAndUpdate').mockImplementationOnce(() => {
-                throw new Error('Simulated Internal Server Error');
-            });
-            const response = yield request(app)
-                .put('/blogs/post/somePostId')
-                .set('Cookie', 'token=validAdminToken') // Add a valid admin token
-                .send({ title: 'Updated Title', body: 'Updated Body' });
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('error', 'Internal Server Error');
-        }));
-    });
-    describe('Delete Post Endpoint', () => {
-        it('should return 401 if not authorized as admin', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .delete('/blogs/post/somePostId')
-                .send();
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Unauthorized, please Login');
-        }));
-        it('should return 404 if post not found', () => __awaiter(void 0, void 0, void 0, function* () {
-            const response = yield request(app)
-                .delete('/blogs/post/nonexistentPostId')
-                .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
-            expect(response.status).toBe(404);
-            expect(response.body).toBe('Post not found');
-        }));
-        it('should return 200 and deleted post info if successful', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Assuming you have a valid post with known postId
-            const response = yield request(app)
-                .delete('/blogs/post/somePostId')
-                .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('n', 1); // Number of deleted documents
-            expect(response.body).toHaveProperty('ok', 1);
-            expect(response.body).toHaveProperty('deletedCount', 1);
-        }));
-        it('should return 500 on internal server error', () => __awaiter(void 0, void 0, void 0, function* () {
-            // Simulate an internal server error
-            jest.spyOn(Post, 'deleteOne').mockImplementationOnce(() => {
-                throw new Error('Simulated Internal Server Error');
-            });
-            const response = yield request(app)
-                .delete('/blogs/post/somePostId')
-                .set('Cookie', 'token=validAdminToken'); // Add a valid admin token
-            expect(response.status).toBe(500);
-            expect(response.text).toBe('Internal Server Error');
-        }));
-    });
+});
+describe('POST /blogs/:id/comment', () => {
+    it('should add a comment to a post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post for testing
+        const newPost = yield Post_1.default.create({
+            title: 'Test Post',
+            body: 'Lorem ipsum dolor sit amet',
+            comments: [] // Start with an empty array of comments
+        });
+        // Make a POST request to add a comment to the post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post(`/blogs/${newPost._id}/comment`)
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ commentText: 'This is a test comment' });
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the updated post data with the added comment
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data.comments.length).toBe(1);
+        expect(response.body.data.comments[0].text).toBe('This is a test comment');
+    }));
+    it('should return a 404 error if the post is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request with an invalid post ID
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/invalidpostid/comment')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ commentText: 'This is a test comment' });
+        // Check if the response status code is 404
+        expect(response.status).toBe(404);
+        // Check if the response contains an error message
+        expect(response.text).toBe('Post not found');
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.findByIdAndUpdate() method to force an error
+        jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a POST request to add a comment to a post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/validpostid/comment')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ commentText: 'This is a test comment' });
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.text).toBe('Internal Server Error');
+    }));
+});
+describe('GET /blogs/:id/comments', () => {
+    it('should get comments for a post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post with comments for testing
+        const newPost = yield Post_1.default.create({
+            title: 'Test Post',
+            body: 'Lorem ipsum dolor sit amet',
+            comments: [{ text: 'Comment 1' }, { text: 'Comment 2' }]
+        });
+        // Make a GET request to retrieve comments for the post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .get(`/blogs/${newPost._id}/comments`)
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains an array of comments
+        expect(response.body).toHaveProperty('comments');
+        expect(Array.isArray(response.body.comments)).toBe(true);
+        // Check if the comments retrieved match the comments added to the post
+        expect(response.body.comments.length).toBe(2);
+        expect(response.body.comments[0].text).toBe('Comment 1');
+        expect(response.body.comments[1].text).toBe('Comment 2');
+    }));
+    it('should return a 404 error if the post is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a GET request with an invalid post ID
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .get('/blogs/invalidpostid/comments')
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 404
+        expect(response.status).toBe(404);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message', 'Post not found');
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.findById() method to force an error
+        jest.spyOn(Post_1.default, 'findById').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a GET request to retrieve comments for a post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .get('/blogs/validpostid/comments')
+            .set('Authorization', 'Bearer validToken'); // Set the Authorization header with a valid token
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message', 'Internal Server Error');
+    }));
+});
+describe('POST /blogs/post', () => {
+    it('should create a new post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request to create a new post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/post')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ title: 'New Post', body: 'This is the body of the new post' });
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the newly created post
+        expect(response.body).toHaveProperty('title', 'New Post');
+        expect(response.body).toHaveProperty('body', 'This is the body of the new post');
+    }));
+    it('should return a 400 error if validation fails', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request with invalid data (missing title)
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/post')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ body: 'This is the body of the new post' });
+        // Check if the response status code is 400
+        expect(response.status).toBe(400);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message');
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.create() method to force an error
+        jest.spyOn(Post_1.default, 'create').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a POST request to create a new post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/blogs/post')
+            .set('Authorization', 'Bearer validToken') // Set the Authorization header with a valid token
+            .send({ title: 'New Post', body: 'This is the body of the new post' });
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message', 'Internal Server Error');
+    }));
+});
+describe('POST /messages', () => {
+    it('should create a new message', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request to create a new message
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/messages')
+            .send({ name: 'John Doe', email: 'john@example.com', message: 'Test message' });
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the newly created message
+        expect(response.body).toHaveProperty('name', 'John Doe');
+        expect(response.body).toHaveProperty('email', 'john@example.com');
+        expect(response.body).toHaveProperty('message', 'Test message');
+    }));
+    it('should return a 400 error if validation fails', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a POST request with invalid data (missing name)
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .post('/messages')
+            .send({ email: 'john@example.com', message: 'Test message' });
+        // Check if the response status code is 400
+        expect(response.status).toBe(400);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message');
+    }));
+});
+describe('GET /messages', () => {
+    it('should retrieve all messages', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a GET request to retrieve all messages
+        const response = yield (0, supertest_1.default)(app_1.default).get('/messages');
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains an array of messages
+        expect(response.body).toHaveProperty('messages');
+        expect(Array.isArray(response.body.messages)).toBe(true);
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Message.find() method to force an error
+        jest.spyOn(Messages_1.default, 'find').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a GET request to retrieve all messages
+        const response = yield (0, supertest_1.default)(app_1.default).get('/messages');
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('message', 'Internal Server Error');
+    }));
+});
+describe('PUT /blogs/post/:id', () => {
+    it('should update a post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post to update
+        const newPost = yield Post_1.default.create({ title: 'Old Title', body: 'Old Body' });
+        // Make a PUT request to update the post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put(`/blogs/post/${newPost._id}`)
+            .send({ title: 'New Title', body: 'New Body' });
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the updated post
+        expect(response.body).toHaveProperty('title', 'New Title');
+        expect(response.body).toHaveProperty('body', 'New Body');
+    }));
+    it('should return a 404 error if the post is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a PUT request with an invalid post ID
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put('/blogs/post/invalidpostid')
+            .send({ title: 'New Title', body: 'New Body' });
+        // Check if the response status code is 404
+        expect(response.status).toBe(404);
+        // Check if the response contains an error message
+        expect(response.text).toBe('Post not found');
+    }));
+    it('should return a 400 error if title or body is missing', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post to update
+        const newPost = yield Post_1.default.create({ title: 'Old Title', body: 'Old Body' });
+        // Make a PUT request with missing title
+        let response = yield (0, supertest_1.default)(app_1.default)
+            .put(`/blogs/post/${newPost._id}`)
+            .send({ body: 'New Body' });
+        // Check if the response status code is 400
+        expect(response.status).toBe(400);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('error');
+        // Make a PUT request with missing body
+        response = yield (0, supertest_1.default)(app_1.default)
+            .put(`/blogs/post/${newPost._id}`)
+            .send({ title: 'New Title' });
+        // Check if the response status code is 400
+        expect(response.status).toBe(400);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('error');
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.findByIdAndUpdate() method to force an error
+        jest.spyOn(Post_1.default, 'findByIdAndUpdate').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a PUT request to update a post
+        const response = yield (0, supertest_1.default)(app_1.default)
+            .put('/blogs/post/validpostid')
+            .send({ title: 'New Title', body: 'New Body' });
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.body).toHaveProperty('error', 'Internal Server Error');
+    }));
+});
+describe('DELETE /blogs/post/:id', () => {
+    it('should delete a post', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Create a new post to delete
+        const newPost = yield Post_1.default.create({ title: 'Test Post', body: 'Test Body' });
+        // Make a DELETE request to delete the post
+        const response = yield (0, supertest_1.default)(app_1.default).delete(`/blogs/post/${newPost._id}`);
+        // Check if the response status code is 200
+        expect(response.status).toBe(200);
+        // Check if the response contains the deleted post information
+        expect(response.body).toHaveProperty('ok', 1); // MongoDB returns { ok: 1 } if the deletion is successful
+    }));
+    it('should return a 404 error if the post is not found', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Make a DELETE request with an invalid post ID
+        const response = yield (0, supertest_1.default)(app_1.default).delete('/blogs/post/invalidpostid');
+        // Check if the response status code is 404
+        expect(response.status).toBe(404);
+        // Check if the response contains an error message
+        expect(response.text).toBe('Post not found');
+    }));
+    it('should handle internal server errors gracefully', () => __awaiter(void 0, void 0, void 0, function* () {
+        // Stubbing the Post.deleteOne() method to force an error
+        jest.spyOn(Post_1.default, 'deleteOne').mockImplementation(() => {
+            throw new Error('Internal Server Error');
+        });
+        // Make a DELETE request to delete a post
+        const response = yield (0, supertest_1.default)(app_1.default).delete('/blogs/post/validpostid');
+        // Check if the response status code is 500
+        expect(response.status).toBe(500);
+        // Check if the response contains an error message
+        expect(response.text).toBe('Internal Server Error');
+    }));
 });
 //# sourceMappingURL=admin.test.js.map

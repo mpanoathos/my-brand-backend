@@ -2,17 +2,17 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
-import Post, { PostDocument } from '../models/Post.js'; 
-import User,{UserDocument} from '../models/User.js';
+import Post, { PostDocument } from '../models/Post'; 
+import User,{UserDocument} from '../models/User';
+import Message from '../models/Messages'
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 
-// const adminLayout = '../views/layout/admin';
 const jwtSecret = process.env.JWT_SECRET as string;
 
 
-import { userSchema, postSchema } from '../helpers/validationScheme.js';
+import { userSchema, postSchema, messageSchema } from '../helpers/validationScheme';
 
 const router: Router = express.Router();
 
@@ -37,34 +37,40 @@ const router: Router = express.Router();
 //   }
 // };
 
-const checkAdmin = async (
-  req: Request & { user?: UserDocument },
-  res: Response,
-  next: NextFunction
-): Promise<Response<any, Record<string, any>> | void> => {
+export const checkAdmin = async (req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | void> => {
   try {
-    const token = req.cookies.token;
-    console.log('Received Token:', token);
+    const authorizationHeader = req.headers.authorization;
+
+    if (!authorizationHeader) {
+      return res.status(401).json({ message: "Unauthorized, please provide a Bearer token" });
+    }
+
+    const token = authorizationHeader.split(' ')[1];
+
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized, please Login" });
+      return res.status(401).json({ message: "Invalid Bearer token format" });
     }
+    console.log('Received token:', token);
 
-    const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET || "");
-    console.log('Decoded Token:', decodedToken);
+    try {
+      const decodedToken: any = jwt.verify(token, jwtSecret || "");
+      console.log("Decoded token: ", decodedToken);
 
-    if (!decodedToken || !decodedToken.userId) {
+      if (!decodedToken || !decodedToken.userId) {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+
+      const user: UserDocument | null = await User.findById(decodedToken.userId);
+
+      if (user?.userRole === "admin") {
+        req.user = user;
+        next();
+      } else {
+        return res.status(401).json({ message: "You are not allowed to perform this action" });
+      }
+    } catch (err) {
+      console.log('Error verifying token:', err);
       return res.status(401).json({ message: "Invalid token" });
-    }
-
-    const user: UserDocument | null = await User.findById(decodedToken.userId); 
-
-    if (user?.userRole === "admin") {
-      req.user = user;
-      next();
-    } else {
-      return res
-        .status(401)
-        .json({ message: "You are not allowed to perform this action" });
     }
   } catch (err: any) {
     if (err.name === "TokenExpiredError") {
@@ -72,21 +78,23 @@ const checkAdmin = async (
     } else if (err.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Invalid token" });
     } else {
-      return res.status(401).json({ message: "Unauthorized, please Login" });
+      console.error('Unexpected error:', err);
+      return res.status(401).json({ message: "Unauthorized, please provide a valid Bearer token" });
     }
   }
 };
 
 // POST Admin-Check-Login Page
+// POST Admin-Check-Login Page
 router.post('/users/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    // Validate input
+    
+    // Validate input using Joi
     const validation = userSchema.validate(req.body);
 
-    if (validation.error) {
-      return res.status(400).json({ message: validation.error.details[0].message });
+    if (!req.body || validation.error) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const user = await User.findOne({ email });
@@ -101,34 +109,43 @@ router.post('/users/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user._id }, jwtSecret);
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, isAdmin:user.userRole==="admin" }, // Payload
+      jwtSecret, // Secret key
+      { expiresIn: '1h' } // Expiration time
+    );
+    // console.log(token)
+   // Send the JWT token in response
+    res.status(200).json({ token, isAdmin:user.userRole==="admin"});
 
-    res.cookie('token', token, { httpOnly: true });
-    res.json({ message: 'Valid Credentials' });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
-});
+});// POST Admin-Check-Login Page
+
 
 //Register users
 router.post('/users/register', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password,userRole } = req.body;
 
     // Validate input using Joi
-    const validation = userSchema.validate({ email, password });
+    const validation = userSchema.validate({ email, password,userRole });
 
     if (validation.error) {
       return res.status(400).json({ message: validation.error.details[0].message });
     }
-    console.log(validation.error)
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({ email, password: hashedPassword });
 
-    res.status(201).json({ message: 'User Created', user });
+    // Generate Bearer token upon successful registration
+    const token = jwt.sign({ userId: user._id }, jwtSecret);
+
+    res.status(201).json({ token, message: 'User Created', user });
   } catch (error) {
-    console.error(error);
+    console.log(error);
 
     if ((error as any).code === 11000) {
       res.status(409).json({ message: 'User already in use' });
@@ -137,15 +154,14 @@ router.post('/users/register', async (req: Request, res: Response) => {
     }
   }
 });
-
 // Get all Users
-router.get('/users',checkAdmin, async (req: Request, res: Response) => {
+router.get('/users', async (req: Request , res: Response) => {
   try {
     const users = await User.find();
 
     res.json({ users });
   } catch (error) {
-    console.error(error);
+    console.log (error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
@@ -172,7 +188,7 @@ router.put('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
 
     res.json({ message: 'User updated successfully', user });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
@@ -209,7 +225,7 @@ router.get('/blogs/:id/likes',checkAdmin, async (req: Request, res: Response) =>
     const likes = post.likes || 0; // Assuming likes property exists on the post schema
     res.json({ likes });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
@@ -252,14 +268,14 @@ router.get('/blogs/:id/comments', checkAdmin, async (req: Request, res: Response
     const comments = post.comments || [];
     res.json({ comments });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 
 //Create new Post
-router.post('/blogs/post', checkAdmin, async (req: Request, res: Response) => {
+router.post('/blogs/post', async (req: Request, res: Response) => {
   try {
     try {
       const newPost = new Post({
@@ -282,9 +298,47 @@ router.post('/blogs/post', checkAdmin, async (req: Request, res: Response) => {
     console.log(error);
   }
 });
+router.post('/messages', async (req: Request, res: Response) => {
+  try {
+    try {
+      const newMessage = new Message({
+        name: req.body.name,
+        email: req.body.email,
+        message: req.body.message,
+      });
 
+      // Validating the newMessage object using messageSchema
+      const messageValidation = messageSchema.validate(newMessage);
+
+      // If there's an error in validation, respond with a 400 status code and the error message
+      if (messageValidation.error) {
+        return res.status(400).json({ message: messageValidation.error.details[0].message });
+      }
+
+      // If validation passes, save the newMessage to the database
+      await Message.create(newMessage);
+      
+      // Respond with the created newMessage object
+      res.json(newMessage);
+    } catch (error) {
+      console.log(error);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+router.get('/messages', async(req,res)=>{
+  try {
+    const messages = await Message.find();
+
+    res.json({ messages });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 // Update Post Page
-router.put('/blogs/post/:id', checkAdmin, async (req: Request, res: Response) => {
+router.put('/blogs/post/:id', async (req: Request, res: Response) => {
   try {
     const { title, body } = req.body;
 
@@ -304,13 +358,13 @@ router.put('/blogs/post/:id', checkAdmin, async (req: Request, res: Response) =>
       res.status(404).send('Post not found');
     }
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // DELETE
-router.delete('/blogs/post/:id', checkAdmin, async (req: Request, res: Response) => {
+router.delete('/blogs/post/:id', async (req: Request, res: Response) => {
   try {
     const deletedPost = await Post.deleteOne({ _id: req.params.id });
     res.json(deletedPost);
@@ -319,5 +373,8 @@ router.delete('/blogs/post/:id', checkAdmin, async (req: Request, res: Response)
     res.status(500).send('Internal Server Error');
   }
 });
+
+
+
 
 export default router;

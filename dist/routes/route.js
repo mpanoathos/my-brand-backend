@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,12 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import express from 'express';
-import Post from '../models/Post.js';
-const router = express.Router();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const Post_1 = __importDefault(require("../models/Post"));
+const router = express_1.default.Router();
 router.get('/blogs', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const data = yield Post.find();
+        const data = yield Post_1.default.find();
         res.send(data);
     }
     catch (error) {
@@ -23,7 +28,7 @@ router.get('/blogs', (req, res) => __awaiter(void 0, void 0, void 0, function* (
 router.get('/blogs/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const slug = req.params.id;
-        const data = yield Post.findById(slug);
+        const data = yield Post_1.default.findById(slug);
         if (!data) {
             res.status(404).send('Blog not found');
         }
@@ -36,5 +41,5 @@ router.get('/blogs/:id', (req, res) => __awaiter(void 0, void 0, void 0, functio
         res.status(500).send('Internal Server Error');
     }
 }));
-export default router;
+exports.default = router;
 //# sourceMappingURL=route.js.map

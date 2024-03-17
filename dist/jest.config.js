@@ -1,8 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
  */
-export default {
+exports.default = {
     clearMocks: true,
     collectCoverage: true,
     coverageDirectory: "coverage",
