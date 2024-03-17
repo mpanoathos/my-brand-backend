@@ -1,0 +1,28 @@
+name: Node.js CI/CD
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      -main
+env:
+  MONGO_URL_TEST: ${{MONGO_URI_TEST}}
+  jwt_secret: ${{JWT_SECRET_TEST}}
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: "21.x"
+
+      - name: Install Dependencies
+        run: npm install
