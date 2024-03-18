@@ -1,6 +1,6 @@
 import request from 'supertest';
-import app from '../app'; // Assuming your Express app is exported from app.js or app.ts
-import Post from '../models/Post'; // Import the Post model
+import app from '../app.js'; // Assuming your Express app is exported from app.js or app.ts
+import Post from '../models/Post.js'; // Import the Post model
 
 import {createServer,Server} from 'http';
 

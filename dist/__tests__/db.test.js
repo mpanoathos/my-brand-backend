@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,13 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // Import the function to test
-const db_1 = __importDefault(require("../config/db"));
-const mongoose_1 = __importDefault(require("mongoose"));
+import connectDB from '../config/db.js';
+import mongoose from 'mongoose';
 // Mock mongoose module
 jest.mock('mongoose', () => ({
     set: jest.fn(),
@@ -33,22 +28,22 @@ describe('connectDB function', () => {
                 host: 'localhost',
             },
         };
-        mongoose_1.default.connect.mockResolvedValueOnce(mockConnection);
+        mongoose.connect.mockResolvedValueOnce(mockConnection);
         // Call the function
-        yield (0, db_1.default)();
+        yield connectDB();
         // Check if mongoose.connect is called with the correct URI
-        expect(mongoose_1.default.connect).toHaveBeenCalledWith(process.env.MONGODB_URI_TEST);
+        expect(mongoose.connect).toHaveBeenCalledWith(process.env.MONGODB_URI_TEST);
         // Check if console.log is called with the expected message
         expect(console.log).toHaveBeenCalledWith('Database connected localhost');
     }));
     it('should handle database connection error', () => __awaiter(void 0, void 0, void 0, function* () {
         // Mock connection error
         const mockError = new Error('Connection failed');
-        mongoose_1.default.connect.mockImplementationOnce(() => {
+        mongoose.connect.mockImplementationOnce(() => {
             throw mockError;
         });
         // Call the function
-        yield (0, db_1.default)();
+        yield connectDB();
         // Check if console.log is called with the error message
         expect(console.log).toHaveBeenCalledWith(mockError);
     }));

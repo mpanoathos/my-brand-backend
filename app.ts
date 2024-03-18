@@ -9,11 +9,11 @@ import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 // import { isActiveRoute } from './helpers/routerHelpers';
-import connectDB from './config/db';
+import connectDB from './config/db.js';
 // import cloudinary from './config/cloudinary';
 // import upload from './config/multer'
-import routes from './routes/route';
-import admin from './routes/admin';
+import routes from './routes/route.js';
+import admin from './routes/admin.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs'
 const swaggerDocument = YAML.load('./config/swagger.yaml')
@@ -28,6 +28,8 @@ const options: cors.CorsOptions = {
     'Content-Type',
     'Accept',
     'X-Access-Token',
+    'Authorization',
+    'Content-Type',
   ],
   credentials: true,
   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',

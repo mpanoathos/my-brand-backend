@@ -2,9 +2,9 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
-import Post, { PostDocument } from '../models/Post'; 
-import User,{UserDocument} from '../models/User';
-import Message from '../models/Messages'
+import Post, { PostDocument } from '../models/Post.js'; 
+import User,{UserDocument} from '../models/User.js';
+import Message from '../models/Messages.js'
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -12,7 +12,7 @@ import jwt from 'jsonwebtoken';
 const jwtSecret = process.env.JWT_SECRET as string;
 
 
-import { userSchema, postSchema, messageSchema } from '../helpers/validationScheme';
+import { userSchema, postSchema, messageSchema } from '../helpers/validationScheme.js';
 
 const router: Router = express.Router();
 
@@ -167,7 +167,7 @@ router.get('/users', async (req: Request , res: Response) => {
 });
 
 // Update User by ID
-router.put('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
+router.put('/users/:userId', async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
     const { email, password, userRole } = req.body;
@@ -194,7 +194,7 @@ router.put('/users/:userId',checkAdmin, async (req: Request, res: Response) => {
 });
 
 // Like a post
-router.post('/blogs/:id/like', checkAdmin, async (req: Request, res: Response) => {
+router.post('/blogs/:id/like', async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     const post: PostDocument | null = await Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } }, { new: true });
@@ -210,7 +210,7 @@ router.post('/blogs/:id/like', checkAdmin, async (req: Request, res: Response) =
   }
 });
 // Get Likes for a Post
-router.get('/blogs/:id/likes',checkAdmin, async (req: Request, res: Response) => {
+router.get('/blogs/:id/likes', async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     
@@ -231,7 +231,7 @@ router.get('/blogs/:id/likes',checkAdmin, async (req: Request, res: Response) =>
 });
 
 // Comment on a post
-router.post('/blogs/:id/comment', checkAdmin, async (req: Request, res: Response) => {
+router.post('/blogs/:id/comment', async (req: Request, res: Response) => {
   try {
     const postId = req.params.id;
     const { commentText } = req.body;
@@ -253,7 +253,7 @@ router.post('/blogs/:id/comment', checkAdmin, async (req: Request, res: Response
 });
 
 // Get Comments for a Post
-router.get('/blogs/:id/comments', checkAdmin, async (req: Request, res: Response) => {
+router.get('/blogs/:id/comments', async (req: Request, res: Response) => {
   try {
     const {postId} = req.params;
     

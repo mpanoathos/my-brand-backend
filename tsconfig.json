@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES6",
     "esModuleInterop": true,
-    "module": "commonjs",
+    "module": "NodeNext",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
