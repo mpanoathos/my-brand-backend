@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import Post, { PostDocument } from '../models/Post.js'; 
+import Post, { PostDocument } from '../models/Post'; 
 const router: Router = express.Router();
 
 router.get('/blogs', async (req: Request, res: Response) => {

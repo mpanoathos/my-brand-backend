@@ -1,9 +1,9 @@
 // Import necessary modules for testing
 import request from 'supertest';
-import app from '../app.js'; // Assuming your Express app instance is exported as 'app'
-import User from '../models/User.js';
-import Post from '../models/Post.js'; 
-import Message from '../models/Messages.js'
+import app from '../app'; // Assuming your Express app instance is exported as 'app'
+import User from '../models/User';
+import Post from '../models/Post'; 
+import Message from '../models/Messages'
 import {createServer,Server} from 'http'
 import jwt from 'jsonwebtoken';
 let server:Server

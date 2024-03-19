@@ -1,5 +1,5 @@
 // Import the function to test
-import connectDB from '../config/db.js';
+import connectDB from '../config/db';
 import mongoose from 'mongoose';
 
 // Mock mongoose module

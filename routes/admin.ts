@@ -2,9 +2,9 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 import express, { Request, Response, Router, NextFunction } from 'express';
-import Post, { PostDocument } from '../models/Post.js'; 
-import User,{UserDocument} from '../models/User.js';
-import Message from '../models/Messages.js'
+import Post, { PostDocument } from '../models/Post'; 
+import User,{UserDocument} from '../models/User';
+import Message from '../models/Messages'
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -12,7 +12,7 @@ import jwt from 'jsonwebtoken';
 const jwtSecret = process.env.JWT_SECRET as string;
 
 
-import { userSchema, postSchema, messageSchema } from '../helpers/validationScheme.js';
+import { userSchema, postSchema, messageSchema } from '../helpers/validationScheme';
 
 const router: Router = express.Router();
 
@@ -247,7 +247,7 @@ router.post('/blogs/:id/comment', async (req: Request, res: Response) => {
       res.status(404).send('Post not found');
     }
   } catch (error) {
-    console.log(error);
+    console.log(error);//line 250
     res.status(500).send('Internal Server Error');
   }
 });
